@@ -1,2 +1,1 @@
 print('initial')
-print('deneme')
