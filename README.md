@@ -8,6 +8,6 @@ This repository contains a project developed for the SE420 Artificial Intelligen
 - **Requirements**:
   1. User-defined initial and goal states.
   2. Moves allowed: up, down, left, right (with associated costs).
-  3. Tiles move in a fixed order (Tile #1, Tile #2, Tile #3, repeat).
+  3. Tiles move in a fixed order (Tile #1, Tile #2, Tile #3, ..., repeat).
   4. Expansion stops after 10 nodes or when the goal state is reached.
   5. Each expanded state is printed and compared with the goal state.
