@@ -26,12 +26,15 @@ class Node:
 def manhattan_distance(state, goal):
     """Mevcut durumun hedef duruma Manhattan mesafesini hesaplar."""
     distance = 0
+    flat_goal = [num for row in goal for num in row]  # Hedef durumu düz bir listeye dönüştür
     for i in range(3):
         for j in range(3):
             if state[i][j] != 0:
-                # Hedef durumdaki (i,j) konumunun hedef yerini bulalım
-                x, y = [(x, y) for x in range(3) for y in range(3) if goal[x][y] == state[i][j]][0]
-                distance += abs(x - i) + abs(y - j)
+                try:
+                    target_i, target_j = divmod(flat_goal.index(state[i][j]), 3)
+                    distance += abs(target_i - i) + abs(target_j - j)
+                except ValueError:
+                    raise ValueError(f"Hata: {state[i][j]} hedef durumunda bulunamadı.")
     return distance
 
 
@@ -79,12 +82,8 @@ def validate_input(flat_input):
 
 def validate_goal(start, goal):
     """Başlangıç ve hedef durumların aynı sayı kümesini içerip içermediğini kontrol eder."""
-    start_numbers = sorted(num for row in start for num in row)
-    goal_numbers = sorted(num for row in goal for num in row)
-    if start_numbers != goal_numbers:
+    if sorted(num for row in start for num in row) != sorted(num for row in goal for num in row):
         raise ValueError("Hatalı giriş: Başlangıç ve hedef durumlar aynı sayı kümesine sahip olmalı.")
-    if start == goal:
-        raise ValueError("Hatalı giriş: Hedef durum, başlangıç durumuyla aynı olmamalı. Yerler farklı olmalı.")
 
 
 def expand_node(node, goal):
@@ -108,20 +107,28 @@ def expand_node(node, goal):
 
 def solve_puzzle_with_sequence(initial_state, goal_state):
     """Bulmacayı ardışık sayı sırasıyla çözmeye çalışır."""
-    current_state = deepcopy(initial_state)
-    print("Başlangıç Durumu:")
-    for row in current_state:
-        print(row)
-    print()
-
     frontier = PriorityQueue()
-    root = Node(state=current_state, cost=manhattan_distance(current_state, goal_state))
+    root = Node(state=initial_state, cost=manhattan_distance(initial_state, goal_state))
     frontier.put(root)
     explored = set()
+    step_count = 0  # Adım sayacı
+    print_limit = 10  # Sadece ilk 10 adım yazdırılsın
+
+    print("Çözüm aranmaya başlandı...\n")
 
     while not frontier.empty():
         node = frontier.get()
         explored.add(tuple(map(tuple, node.state)))
+
+        # İlk 10 adımı yazdır
+        if step_count < print_limit:
+            print(f"Adım {step_count}:")
+            print(f"Genişletilen düğüm:\n{node.state}")
+            if node.move:
+                print(f"Hareket: {node.move}")
+            print(f"Toplam maliyet: {node.cost}")
+            print("------")
+        step_count += 1
 
         # Hedef duruma ulaşıldığında çözüm yolunu yazdır
         if node.state == goal_state:
@@ -131,7 +138,7 @@ def solve_puzzle_with_sequence(initial_state, goal_state):
                 node = node.parent
             path.reverse()  # Çözüm yolunu doğru sıraya sok
 
-            print("Çözüm Bulundu! Adımlar:")
+            print("\nÇözüm Bulundu! Adımlar:")
             total_cost = 0
             for step, step_node in enumerate(path):
                 if step_node.move:
@@ -150,25 +157,24 @@ def solve_puzzle_with_sequence(initial_state, goal_state):
                 frontier.put(child)
 
     # Eğer bu noktaya ulaşılırsa çözüm bulunamamış demektir
-    print("Çözüm bulunamadı.")
+    print("\nÇözüm bulunamadı.")
+    print(f"Toplam 10 adım genişletildi.")
 
 
 if __name__ == "__main__":
-    while True:
-        try:
-            print("Başlangıç durumunu düz bir şekilde (9 sayı) girin (örnek: 1 2 3 0 0 0 0 0 0):")
-            start_input = input()
-            start = validate_input(start_input)
-            break
-        except ValueError as e:
-            print(e)
-    while True:
-        try:
-            print("Hedef durumunu düz bir şekilde (9 sayı) girin (örnek: 1 2 3 4 5 6 7 8 0):")
-            goal_input = input()
-            goal = validate_input(goal_input)
-            validate_goal(start, goal)
-            break
-        except ValueError as e:
-            print(e)
-    solve_puzzle_with_sequence(start, goal)
+    print("Lütfen başlangıç durumunu girin (örnek: 1 0 2 0 3 0 0 0 0):")
+    try:
+        start_input = input()
+        start_state = validate_input(start_input)
+
+        print("Lütfen hedef durumunu girin (örnek: 0 0 0 0 1 2 0 0 3):")
+        goal_input = input()
+        goal_state = validate_input(goal_input)
+
+        # Geçerli giriş kontrolü
+        validate_goal(start_state, goal_state)
+
+        # Bulmacayı çöz
+        solve_puzzle_with_sequence(start_state, goal_state)
+    except ValueError as e:
+        print(f"Hata: {e}")
