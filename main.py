@@ -109,12 +109,11 @@ def expand_node(node, goal):
 def solve_puzzle_with_sequence(initial_state, goal_state):
     """Bulmacayı ardışık sayı sırasıyla çözmeye çalışır."""
     current_state = deepcopy(initial_state)
-    step = 0
-    total_cost = 0
     print("Başlangıç Durumu:")
     for row in current_state:
         print(row)
     print()
+
     frontier = PriorityQueue()
     root = Node(state=current_state, cost=manhattan_distance(current_state, goal_state))
     frontier.put(root)
@@ -123,26 +122,35 @@ def solve_puzzle_with_sequence(initial_state, goal_state):
     while not frontier.empty():
         node = frontier.get()
         explored.add(tuple(map(tuple, node.state)))
+
+        # Hedef duruma ulaşıldığında çözüm yolunu yazdır
         if node.state == goal_state:
             path = []
             while node:
                 path.append(node)
                 node = node.parent
-            path.reverse()
-            for step_node in path[1:]:
-                step += 1
-                move_cost = 2 if step_node.move in ["L", "R"] else 1
-                current_state = step_node.state
-                total_cost += move_cost
-                print(f"Adım {step}: Move {step_node.move}")
-                print(f"Maliyet: {move_cost}, Toplam Maliyet: {total_cost}")
-                for row in current_state:
+            path.reverse()  # Çözüm yolunu doğru sıraya sok
+
+            print("Çözüm Bulundu! Adımlar:")
+            total_cost = 0
+            for step, step_node in enumerate(path):
+                if step_node.move:
+                    move_cost = 2 if step_node.move in ["L", "R"] else 1
+                    total_cost += move_cost
+                    print(f"Adım {step}: Hareket {step_node.move}")
+                    print(f"Maliyet: {move_cost}, Toplam Maliyet: {total_cost}")
+                for row in step_node.state:
                     print(row)
                 print()
             return
+
+        # Çocuk düğümleri genişlet
         for child in expand_node(node, goal_state):
             if tuple(map(tuple, child.state)) not in explored:
                 frontier.put(child)
+
+    # Eğer bu noktaya ulaşılırsa çözüm bulunamamış demektir
+    print("Çözüm bulunamadı.")
 
 
 if __name__ == "__main__":
