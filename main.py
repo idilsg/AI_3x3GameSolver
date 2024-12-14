@@ -67,16 +67,21 @@ def validate_input(flat_input):
         numbers = list(map(int, flat_input.split()))
     except ValueError:
         raise ValueError("Hatalı giriş: Lütfen sadece sayılar girin.")
+
     if len(numbers) != 9:
         raise ValueError("Hatalı giriş: Lütfen 9 adet sayı girin.")
+
     unique_numbers = set(numbers)
     if len(unique_numbers - {0}) != len(numbers) - numbers.count(0):
         raise ValueError("Hatalı giriş: Boş kutular (0) hariç aynı sayıdan birden fazla olmamalı.")
+
     if numbers.count(0) < 1:
         raise ValueError("Hatalı giriş: En az bir adet boş kutu (0) olmalı.")
+
     non_zero_numbers = sorted(num for num in numbers if num != 0)
     if non_zero_numbers != list(range(1, len(non_zero_numbers) + 1)):
         raise ValueError("Hatalı giriş: Boş kutular hariç girilen sayılar ardışık olmalı.")
+
     return [numbers[:3], numbers[3:6], numbers[6:]]
 
 
@@ -108,7 +113,8 @@ def expand_node(node, goal):
 def solve_puzzle_with_sequence(initial_state, goal_state):
     """Bulmacayı ardışık sayı sırasıyla çözmeye çalışır."""
     frontier = PriorityQueue()
-    root = Node(state=initial_state, cost=manhattan_distance(initial_state, goal_state))
+    # Başlangıç maliyeti 0 olarak ayarlandı
+    root = Node(state=initial_state, cost=0)
     frontier.put(root)
     explored = set()
     step_count = 0  # Adım sayacı
@@ -147,7 +153,8 @@ def solve_puzzle_with_sequence(initial_state, goal_state):
                     print(f"Adım {step}: Hareket {step_node.move}")
                     print(f"Maliyet: {move_cost}, Toplam Maliyet: {total_cost}")
                 for row in step_node.state:
-                    print(row)
+                    print(f"{' '.join(map(str, row))}")
+
                 print()
             return
 
