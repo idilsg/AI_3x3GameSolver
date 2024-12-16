@@ -8,13 +8,11 @@ directions = {
     "R": (0, 1)
 }
 
-
 def print_matrix(matrix):
     """Puzzle durumunu matris formatında yazdırır."""
     for row in matrix:
         print(" ".join(str(num) if num != 0 else "_" for num in row))
     print("-" * 10)
-
 
 def manhattan_distance(state, goal):
     """Mevcut durumun hedef duruma Manhattan mesafesini hesaplar."""
@@ -30,7 +28,6 @@ def manhattan_distance(state, goal):
                     raise ValueError(f"Hata: {state[i][j]} hedef durumunda bulunamadı.")
     return distance
 
-
 def move_blank(state, direction):
     """Boş kareyi belirtilen yöne hareket ettirir."""
     for i in range(3):
@@ -43,7 +40,6 @@ def move_blank(state, direction):
                     new_state[i][j], new_state[new_x][new_y] = new_state[new_x][new_y], new_state[i][j]
                     return new_state
     return None
-
 
 def validate_input(flat_input):
     """Kullanıcı girişini kontrol eder ve geçerli bir 3x3 matris döndürür."""
@@ -68,12 +64,10 @@ def validate_input(flat_input):
 
     return [numbers[:3], numbers[3:6], numbers[6:]]
 
-
 def validate_goal(start, goal):
     """Başlangıç ve hedef durumların aynı sayı kümesini içerip içermediğini kontrol eder."""
     if sorted(num for row in start for num in row) != sorted(num for row in goal for num in row):
         raise ValueError("Hatalı giriş: Başlangıç ve hedef durumlar aynı sayı kümesine sahip olmalı.")
-
 
 def find_blank(state):
     """Boş kutunun (0) bulunduğu konumu döndürür."""
@@ -82,14 +76,12 @@ def find_blank(state):
             return i, row.index(0)
     return None
 
-
 def get_tile_position(state, tile):
     """Bir taşın pozisyonunu döndürür."""
     for i, row in enumerate(state):
         if tile in row:
             return i, row.index(tile)
     return None
-
 
 def solve_puzzle_step_by_step(initial_state, goal_state):
     """Puzzle'ı adım adım çöz ve hareketleri ekrana yazdır."""
@@ -101,6 +93,7 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
     print_matrix(current_state)
 
     tile_to_move = 1  # Başlangıçta taş 1 ile başlanacak
+    total_cost = 0  # Toplam maliyet (Manhattan mesafesi)
 
     while current_state != goal_state:
         best_move = None
@@ -141,11 +134,14 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
         print(f"Move: {move}")
         print_matrix(current_state)
 
+        # Toplam maliyeti artır
+        total_cost += best_priority
+
         # Sıradaki taş numarasına geç
         tile_to_move = tile_to_move + 1 if tile_to_move < 8 else 1
 
     print("Solution completed!")
-
+    print(f"Total cost: {total_cost}")  # Toplam maliyeti yazdır
 
 def main():
     try:
@@ -163,7 +159,6 @@ def main():
 
     except ValueError as e:
         print(f"Hata: {e}")
-
 
 if __name__ == "__main__":
     main()
