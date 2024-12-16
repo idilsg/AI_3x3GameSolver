@@ -1,5 +1,4 @@
 from copy import deepcopy
-from queue import PriorityQueue
 
 # Yön matrisleri: Yukarı, Aşağı, Sol, Sağ
 directions = {
@@ -10,23 +9,17 @@ directions = {
 }
 
 
-class Node:
-    def __init__(self, state, parent=None, move=None, depth=0, cost=0):
-        self.state = state
-        self.parent = parent
-        self.move = move
-        self.depth = depth
-        self.cost = cost  # Hareket maliyeti
-        self.priority = self.depth + self.cost
-
-    def __lt__(self, other):
-        return self.priority < other.priority
+def print_matrix(matrix):
+    """Puzzle durumunu matris formatında yazdırır."""
+    for row in matrix:
+        print(" ".join(str(num) if num != 0 else "_" for num in row))
+    print("-" * 10)
 
 
 def manhattan_distance(state, goal):
     """Mevcut durumun hedef duruma Manhattan mesafesini hesaplar."""
     distance = 0
-    flat_goal = [num for row in goal for num in row]  # Hedef durumu düz bir listeye dönüştür
+    flat_goal = [num for row in goal for num in row]
     for i in range(3):
         for j in range(3):
             if state[i][j] != 0:
@@ -38,26 +31,17 @@ def manhattan_distance(state, goal):
     return distance
 
 
-def get_blank_positions(state):
-    """Boş karelerin (0) konumlarını döndürür."""
-    positions = []
+def move_blank(state, direction):
+    """Boş kareyi belirtilen yöne hareket ettirir."""
     for i in range(3):
         for j in range(3):
             if state[i][j] == 0:
-                positions.append((i, j))
-    return positions
-
-
-def move_blank(state, direction):
-    """Boş kareyi belirtilen yöne hareket ettirir."""
-    blank_positions = get_blank_positions(state)
-    for x, y in blank_positions:
-        dx, dy = directions[direction]
-        new_x, new_y = x + dx, y + dy
-        if 0 <= new_x < 3 and 0 <= new_y < 3:
-            new_state = deepcopy(state)
-            new_state[x][y], new_state[new_x][new_y] = new_state[new_x][new_y], new_state[x][y]
-            return new_state
+                dx, dy = directions[direction]
+                new_x, new_y = i + dx, j + dy
+                if 0 <= new_x < 3 and 0 <= new_y < 3:
+                    new_state = deepcopy(state)
+                    new_state[i][j], new_state[new_x][new_y] = new_state[new_x][new_y], new_state[i][j]
+                    return new_state
     return None
 
 
@@ -75,128 +59,85 @@ def validate_input(flat_input):
     if len(unique_numbers - {0}) != len(numbers) - numbers.count(0):
         raise ValueError("Hatalı giriş: Boş kutular (0) hariç aynı sayıdan birden fazla olmamalı.")
 
-    if numbers.count(0) < 1:
-        raise ValueError("Hatalı giriş: En az bir adet boş kutu (0) olmalı.")
-
-    non_zero_numbers = sorted(num for num in numbers if num != 0)
-    if non_zero_numbers != list(range(1, len(non_zero_numbers) + 1)):
-        raise ValueError("Hatalı giriş: Boş kutular hariç girilen sayılar ardışık olmalı.")
-
     return [numbers[:3], numbers[3:6], numbers[6:]]
 
 
 def validate_goal(start, goal):
     """Başlangıç ve hedef durumların aynı sayı kümesini içerip içermediğini kontrol eder."""
     if sorted(num for row in start for num in row) != sorted(num for row in goal for num in row):
-        raise ValueError("Hatalı giriş: Başlangıç ve hedef durumlar aynı sayı kümesine sahip olmalı.")
-
-
-def expand_node(node, goal):
-    """Mevcut düğümden hareketleri genişletir."""
-    expanded_nodes = []
-    for direction in directions.keys():
-        new_state = move_blank(node.state, direction)
-        if new_state:
-            move_cost = 2 if direction in ["L", "R"] else 1
-            new_node = Node(
-                state=new_state,
-                parent=node,
-                move=direction,
-                depth=node.depth + 1,
-                cost=node.cost + move_cost
-            )
-            new_node.priority = new_node.cost + manhattan_distance(new_state, goal)
-            expanded_nodes.append(new_node)
-    return expanded_nodes
+        raise ValueError("Başlangıç ve hedef durumlar aynı sayı kümesine sahip olmalı.")
 
 
 def solve_puzzle_step_by_step(initial_state, goal_state):
-    current_state = [row[:] for row in initial_state]  # Başlangıç durumunun bir kopyasını oluştur
-    total_cost = 0  # Toplam maliyet
+    """Puzzle'ı adım adım çöz ve hareketleri ekrana yazdır."""
+    current_state = [row[:] for row in initial_state]  # Başlangıç durumunun kopyası
+    visited_states = set()  # Daha önce ziyaret edilen durumları kaydetmek için
+    visited_states.add(tuple(tuple(row) for row in current_state))  # Başlangıç durumu eklenir
 
-    def find_position(matrix, value):
-        """Bir matris içinde bir değerin pozisyonunu bul."""
-        for i, row in enumerate(matrix):
-            if value in row:
-                return i, row.index(value)
+    print("Başlangıç durumu:")
+    print_matrix(current_state)
+
+    def get_tile_position(state, tile):
+        """Bir taşın mevcut pozisyonunu bul."""
+        for i, row in enumerate(state):
+            if tile in row:
+                return i, row.index(tile)
         return None
 
-    def calculate_cost(current_pos, goal_pos):
-        """Pozisyonlar arasındaki maliyeti hesapla."""
-        return abs(current_pos[0] - goal_pos[0]) + abs(current_pos[1] - goal_pos[1])
+    def is_tile_in_correct_position(state, tile):
+        """Bir taş doğru pozisyonda mı?"""
+        current_pos = get_tile_position(state, tile)
+        goal_pos = get_tile_position(goal_state, tile)
+        return current_pos == goal_pos
 
-    moves_log = []  # Hareketleri kaydetmek için bir liste
+    while current_state != goal_state:
+        best_move = None
+        best_priority = float('inf')  # En düşük önceliği arıyoruz
 
-    while True:
-        all_at_goal = True  # Tüm sayıların hedefte olup olmadığını kontrol etmek için bir bayrak
+        for direction in directions.keys():
+            new_state = move_blank(current_state, direction)
 
-        for number in range(1, 10):  # 1'den 9'a kadar sırayla sayılar
-            current_pos = find_position(current_state, number)
-            goal_pos = find_position(goal_state, number)
-
-            # Eğer sayı hedefteyse atla
-            if current_pos == goal_pos:
-                moves_log.append(f"{number} zaten hedef konumda.")
-                continue
-
-            # Hedefte olmayan bir sayı varsa tüm sayıların hedefte olmadığını işaretle
-            all_at_goal = False
-
-            # Öncelikle sütun farkını gider
-            if current_pos[1] != goal_pos[1]:
-                direction = "sağa" if goal_pos[1] > current_pos[1] else "sola"
-                new_pos = (current_pos[0], current_pos[1] + (1 if direction == "sağa" else -1))
-                current_state[current_pos[0]][current_pos[1]], current_state[new_pos[0]][new_pos[1]] = (
-                    current_state[new_pos[0]][new_pos[1]],
-                    current_state[current_pos[0]][current_pos[1]],
+            if new_state and tuple(tuple(row) for row in new_state) not in visited_states:
+                # Yanlış pozisyonda olan taşların toplam mesafesini hesapla
+                total_misplaced_distance = sum(
+                    manhattan_distance(new_state, goal_state)
+                    for tile in range(1, 9)  # 1'den 8'e kadar olan taşlar için
+                    if not is_tile_in_correct_position(new_state, tile)
                 )
-                total_cost += 1
-                moves_log.append(
-                    f"{number} {direction} hareket etti. Yeni durum:\n{format_puzzle(current_state)}\nO adımdaki toplam maliyet: {total_cost}"
-                )
-                break  # Bir adım yapıldıktan sonra diğer sayılara geçmek için döngüden çık
+                if total_misplaced_distance < best_priority:
+                    best_priority = total_misplaced_distance
+                    best_move = (new_state, direction)
 
-            # Daha sonra satır farkını gider
-            if current_pos[0] != goal_pos[0]:
-                direction = "aşağı" if goal_pos[0] > current_pos[0] else "yukarı"
-                new_pos = (current_pos[0] + (1 if direction == "aşağı" else -1), current_pos[1])
-                current_state[current_pos[0]][current_pos[1]], current_state[new_pos[0]][new_pos[1]] = (
-                    current_state[new_pos[0]][new_pos[1]],
-                    current_state[current_pos[0]][current_pos[1]],
-                )
-                total_cost += 1
-                moves_log.append(
-                    f"{number} {direction} hareket etti. Yeni durum:\n{format_puzzle(current_state)}\nO adımdaki toplam maliyet: {total_cost}"
-                )
-                break  # Bir adım yapıldıktan sonra diğer sayılara geçmek için döngüden çık
+        if best_move is None:
+            raise ValueError("Hata: Hareket bulunamadı, puzzle çözülemiyor.")
 
-        # Eğer tüm sayılar hedef konumdaysa döngüyü kır
-        if all_at_goal:
-            moves_log.append("Tüm sayılar hedef konumda!")
-            break
+        # Hareketi uygula
+        current_state, move = best_move
+        visited_states.add(tuple(tuple(row) for row in current_state))  # Yeni durumu ziyaret edilenlere ekle
 
-    # Çözüm bilgilerini döndür
-    moves_log.append(f"Toplam maliyet: {total_cost}")
-    return moves_log
+        print(f"Hareket: {move}")
+        print_matrix(current_state)
 
-
-def format_puzzle(puzzle):
-    """Puzzle durumunu formatlayarak yazdır."""
-    return "\n".join([" ".join(map(str, row)) for row in puzzle])
+    print("Çözüm tamamlandı!")
+    return
 
 
 def main():
-    # Kullanıcıdan başlangıç ve hedef durumlarını al
-    initial_input = input("Lütfen başlangıç durumunu girin (örnek: 1 0 2 0 3 0 0 0 0): ")
-    initial_state = [list(map(int, initial_input.split()))[i:i+3] for i in range(0, 9, 3)]
+    try:
+        initial_input = input("Lütfen başlangıç durumunu girin (örnek: 1 0 2 0 3 0 0 0 0): ")
+        initial_state = validate_input(initial_input)
 
-    goal_input = input("Lütfen hedef durumunu girin (örnek: 0 0 0 0 1 2 0 0 3): ")
-    goal_state = [list(map(int, goal_input.split()))[i:i+3] for i in range(0, 9, 3)]
+        goal_input = input("Lütfen hedef durumunu girin (örnek: 0 0 0 0 1 2 0 0 3): ")
+        goal_state = validate_input(goal_input)
 
-    # Çözümü bul ve adımları yazdır
-    moves_log = solve_puzzle_step_by_step(initial_state, goal_state)
-    for log in moves_log:
-        print(log)
+        validate_goal(initial_state, goal_state)
+        print("Başlangıç ve hedef durumlar doğrulandı.")
+
+        # Puzzle'ı çöz
+        solve_puzzle_step_by_step(initial_state, goal_state)
+
+    except ValueError as e:
+        print(f"Hata: {e}")
 
 
 if __name__ == "__main__":
