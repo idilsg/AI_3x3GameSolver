@@ -59,13 +59,20 @@ def validate_input(flat_input):
     if len(unique_numbers - {0}) != len(numbers) - numbers.count(0):
         raise ValueError("Hatalı giriş: Boş kutular (0) hariç aynı sayıdan birden fazla olmamalı.")
 
+    if numbers.count(0) < 1:
+        raise ValueError("Hatalı giriş: En az bir adet boş kutu (0) olmalı.")
+
+    non_zero_numbers = sorted(num for num in numbers if num != 0)
+    if non_zero_numbers != list(range(1, len(non_zero_numbers) + 1)):
+        raise ValueError("Hatalı giriş: Boş kutular hariç girilen sayılar ardışık olmalı.")
+
     return [numbers[:3], numbers[3:6], numbers[6:]]
 
 
 def validate_goal(start, goal):
     """Başlangıç ve hedef durumların aynı sayı kümesini içerip içermediğini kontrol eder."""
     if sorted(num for row in start for num in row) != sorted(num for row in goal for num in row):
-        raise ValueError("Başlangıç ve hedef durumlar aynı sayı kümesine sahip olmalı.")
+        raise ValueError("Hatalı giriş: Başlangıç ve hedef durumlar aynı sayı kümesine sahip olmalı.")
 
 
 def solve_puzzle_step_by_step(initial_state, goal_state):
