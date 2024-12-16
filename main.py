@@ -46,24 +46,29 @@ def move_blank(state, direction):
 
 def validate_input(flat_input):
     """kullanıcı girişleri için kontroller"""
+    err = 0
     try:
         numbers = list(map(int, flat_input.split()))
     except ValueError:
         raise ValueError("Hatalı giriş: Lütfen sadece sayılar girin.")
 
     if len(numbers) != 9:
-        raise ValueError("Hatalı giriş: Lütfen 9 adet sayı girin.")
+        print("Hatalı giriş: Lütfen 9 adet sayı girin.")
+        err = 1
 
     unique_numbers = set(numbers)
     if len(unique_numbers - {0}) != len(numbers) - numbers.count(0):
-        raise ValueError("Hatalı giriş: Boş kutular (0) hariç aynı sayıdan birden fazla olmamalı.")
+        print("Hatalı giriş: Boş kutular (0) hariç aynı sayıdan birden fazla olmamalı.")
+        err = 1
 
     if numbers.count(0) < 1:
-        raise ValueError("Hatalı giriş: En az bir adet boş kutu (0) olmalı.")
+        print("Hatalı giriş: En az bir adet boş kutu (0) olmalı.")
+        err = 1
 
     non_zero_numbers = sorted(num for num in numbers if num != 0)
     if non_zero_numbers != list(range(1, len(non_zero_numbers) + 1)):
-        raise ValueError("Hatalı giriş: Boş kutular hariç girilen sayılar ardışık olmalı.")
+        print("Hatalı giriş: Boş kutular hariç girilen sayılar ardışık olmalı.")
+        err = 1
 
     return [numbers[:3], numbers[3:6], numbers[6:]]
 
@@ -136,17 +141,17 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
         if best_move is None:
             raise ValueError("Error: No valid move found, puzzle cannot be solved.")
 
-        # Hareketi uygula
+        # hareketi uygulamak için
         current_state, move = best_move
         visited_states.add(tuple(tuple(row) for row in current_state))
 
         print(f"\nMove: {move}")
         print_matrix(current_state)
 
-        # Toplam maliyeti artır
+        # toplam maliyeti artır
         # total_cost += best_priority
 
-        # Sıradaki taş numarasına geç
+        # sıradaki sayıya geç
         tile_to_move = tile_to_move + 1 if tile_to_move < 8 else 1 #8'den küçük verince sıkıntı olabiliyor, çöz
 
     print("Solution completed!")
@@ -156,10 +161,10 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
 def main():
     try:
         initial_input = input("Enter the initial state (exp: 1 2 3 0 0 0 0 0 0): ")
-        initial_state = validate_input(initial_input)
+        initial_state = validate_input(initial_input) # err = 1'ken tekrar soracak şekilde ayarla
 
         goal_input = input("Enter the goal state (exp: 0 0 0 1 2 3 0 0 0): ")
-        goal_state = validate_input(goal_input)
+        goal_state = validate_input(goal_input) #err = 1'ken tekrar soracak şekilde ayarla
 
         validate_goal(initial_state, goal_state)
         print("Valid initial and goal state.")
