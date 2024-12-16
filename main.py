@@ -75,58 +75,76 @@ def validate_goal(start, goal):
         raise ValueError("Hatalı giriş: Başlangıç ve hedef durumlar aynı sayı kümesine sahip olmalı.")
 
 
+def find_blank(state):
+    """Boş kutunun (0) bulunduğu konumu döndürür."""
+    for i, row in enumerate(state):
+        if 0 in row:
+            return i, row.index(0)
+    return None
+
+
+def get_tile_position(state, tile):
+    """Bir taşın pozisyonunu döndürür."""
+    for i, row in enumerate(state):
+        if tile in row:
+            return i, row.index(tile)
+    return None
+
+
 def solve_puzzle_step_by_step(initial_state, goal_state):
     """Puzzle'ı adım adım çöz ve hareketleri ekrana yazdır."""
     current_state = [row[:] for row in initial_state]  # Başlangıç durumunun kopyası
     visited_states = set()  # Daha önce ziyaret edilen durumları kaydetmek için
     visited_states.add(tuple(tuple(row) for row in current_state))  # Başlangıç durumu eklenir
 
-    print("Başlangıç durumu:")
+    print("Initial state:")
     print_matrix(current_state)
 
-    def get_tile_position(state, tile):
-        """Bir taşın mevcut pozisyonunu bul."""
-        for i, row in enumerate(state):
-            if tile in row:
-                return i, row.index(tile)
-        return None
-
-    def is_tile_in_correct_position(state, tile):
-        """Bir taş doğru pozisyonda mı?"""
-        current_pos = get_tile_position(state, tile)
-        goal_pos = get_tile_position(goal_state, tile)
-        return current_pos == goal_pos
+    tile_to_move = 1  # Başlangıçta taş 1 ile başlanacak
 
     while current_state != goal_state:
         best_move = None
         best_priority = float('inf')  # En düşük önceliği arıyoruz
 
-        for direction in directions.keys():
-            new_state = move_blank(current_state, direction)
+        # Her bir taş için, sırasıyla hareket ettirilmesi gereken taşları değerlendiriyoruz
+        for tile in range(tile_to_move, 9):
+            current_pos = get_tile_position(current_state, tile)
+            goal_pos = get_tile_position(goal_state, tile)
 
-            if new_state and tuple(tuple(row) for row in new_state) not in visited_states:
-                # Yanlış pozisyonda olan taşların toplam mesafesini hesapla
-                total_misplaced_distance = sum(
-                    manhattan_distance(new_state, goal_state)
-                    for tile in range(1, 9)  # 1'den 8'e kadar olan taşlar için
-                    if not is_tile_in_correct_position(new_state, tile)
-                )
-                if total_misplaced_distance < best_priority:
-                    best_priority = total_misplaced_distance
-                    best_move = (new_state, direction)
+            if current_pos != goal_pos:  # Taş doğru pozisyonda değilse
+                # Eğer aynı satırda ise sadece sütunda değişiklik yapılacak
+                if current_pos[0] == goal_pos[0]:
+                    for direction in ['L', 'R']:
+                        new_state = move_blank(current_state, direction)
+                        if new_state:
+                            total_misplaced_distance = manhattan_distance(new_state, goal_state)
+                            if total_misplaced_distance < best_priority:
+                                best_priority = total_misplaced_distance
+                                best_move = (new_state, direction)
+                # Eğer aynı satırda değilse önce satırda değişiklik yapılacak
+                elif current_pos[1] == goal_pos[1]:
+                    for direction in ['U', 'D']:
+                        new_state = move_blank(current_state, direction)
+                        if new_state:
+                            total_misplaced_distance = manhattan_distance(new_state, goal_state)
+                            if total_misplaced_distance < best_priority:
+                                best_priority = total_misplaced_distance
+                                best_move = (new_state, direction)
 
         if best_move is None:
-            raise ValueError("Hata: Hareket bulunamadı, puzzle çözülemiyor.")
+            raise ValueError("Error: No valid move found, puzzle cannot be solved.")
 
         # Hareketi uygula
         current_state, move = best_move
         visited_states.add(tuple(tuple(row) for row in current_state))  # Yeni durumu ziyaret edilenlere ekle
 
-        print(f"Hareket: {move}")
+        print(f"Move: {move}")
         print_matrix(current_state)
 
-    print("Çözüm tamamlandı!")
-    return
+        # Sıradaki taş numarasına geç
+        tile_to_move = tile_to_move + 1 if tile_to_move < 8 else 1
+
+    print("Solution completed!")
 
 
 def main():
