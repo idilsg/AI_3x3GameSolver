@@ -1,11 +1,11 @@
 from copy import deepcopy
 
-# Yön matrisleri: Yukarı, Aşağı, Sol, Sağ
+
 directions = {
-    "U": (-1, 0),
-    "D": (1, 0),
-    "L": (0, -1),
-    "R": (0, 1)
+    "U": (-1, 0), #up
+    "D": (1, 0), #down
+    "L": (0, -1), #left
+    "R": (0, 1) #right
 }
 
 
@@ -26,7 +26,7 @@ def manhattan_distance(state, goal):
                     target_i, target_j = divmod(flat_goal.index(state[i][j]), 3)
                     distance += abs(target_i - i) + abs(target_j - j)
                 except ValueError:
-                    raise ValueError(f"Hata: {state[i][j]} hedef durumunda bulunamadı.")
+                    raise ValueError(f"Error: {state[i][j]}")
     return distance
 
 
@@ -46,29 +46,35 @@ def move_blank(state, direction):
 
 def validate_input(flat_input):
     """kullanıcı girişleri için kontroller"""
-    err = 0
+    err = 1
     try:
         numbers = list(map(int, flat_input.split()))
     except ValueError:
-        raise ValueError("Hatalı giriş: Lütfen sadece sayılar girin.")
+        raise ValueError("Invalid entry: Please enter numbers only.")
 
-    if len(numbers) != 9:
-        print("Hatalı giriş: Lütfen 9 adet sayı girin.")
-        err = 1
+    while err == 1:
 
-    unique_numbers = set(numbers)
-    if len(unique_numbers - {0}) != len(numbers) - numbers.count(0):
-        print("Hatalı giriş: Boş kutular (0) hariç aynı sayıdan birden fazla olmamalı.")
-        err = 1
+        if len(numbers) != 9:
+            print("Invalid entry: Please enter 9 numbers.")
+        else:
+            err = 0
 
-    if numbers.count(0) < 1:
-        print("Hatalı giriş: En az bir adet boş kutu (0) olmalı.")
-        err = 1
+        unique_numbers = set(numbers)
+        if len(unique_numbers - {0}) != len(numbers) - numbers.count(0):
+            print("Invalid entry: There should not be more than one of the same number except for empty boxes (0).")
+        else:
+            err = 0
 
-    non_zero_numbers = sorted(num for num in numbers if num != 0)
-    if non_zero_numbers != list(range(1, len(non_zero_numbers) + 1)):
-        print("Hatalı giriş: Boş kutular hariç girilen sayılar ardışık olmalı.")
-        err = 1
+        if numbers.count(0) < 1:
+            print("Invalid entry: There must be at least one empty box (0).")
+        else:
+            err = 0
+
+        non_zero_numbers = sorted(num for num in numbers if num != 0)
+        if non_zero_numbers != list(range(1, len(non_zero_numbers) + 1)):
+            print("Invalid entry: Numbers entered must be consecutive, except for empty boxes.")
+        else:
+            err = 0
 
     return [numbers[:3], numbers[3:6], numbers[6:]]
 
@@ -76,7 +82,7 @@ def validate_input(flat_input):
 def validate_goal(start, goal):
     """initial ve goal'da aynı sayılar olup olmadığını kontrol etmek için"""
     if sorted(num for row in start for num in row) != sorted(num for row in goal for num in row):
-        raise ValueError("Hatalı giriş: Başlangıç ve hedef durumlar aynı sayı kümesine sahip olmalı.")
+        raise ValueError("Invalid input: Initial and goal states must have the same set of numbers.")
 
 
 def find_blank(state):
@@ -109,14 +115,13 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
 
     while current_state != goal_state:
         best_move = None
-        best_priority = float('inf')  # En düşük önceliği arıyoruz
+        best_priority = float('inf')  # en düşük önceliği arıyoruz
 
-        # Her bir taş için, sırasıyla hareket ettirilmesi gereken taşları değerlendiriyoruz
         for tile in range(tile_to_move, 9):
             current_pos = get_tile_position(current_state, tile)
             goal_pos = get_tile_position(goal_state, tile)
 
-            if current_pos != goal_pos:  # taş doğru pozisyonda değilse
+            if current_pos != goal_pos:  # sayı doğru pozisyonda değilse
                 # eğer aynı satırda ise sadece sütunda değişiklik yapılacak
                 if current_pos[0] == goal_pos[0]:
                     for direction in ['L', 'R']:
@@ -152,7 +157,7 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
         # total_cost += best_priority
 
         # sıradaki sayıya geç
-        tile_to_move = tile_to_move + 1 if tile_to_move < 8 else 1 #8'den küçük verince sıkıntı olabiliyor, çöz
+        tile_to_move = tile_to_move + 1 if tile_to_move < 8 else 1
 
     print("Solution completed!")
     print(f"Total cost: {total_cost}")  # toplam maliyet
@@ -161,10 +166,10 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
 def main():
     try:
         initial_input = input("Enter the initial state (exp: 1 2 3 0 0 0 0 0 0): ")
-        initial_state = validate_input(initial_input) # err = 1'ken tekrar soracak şekilde ayarla
+        initial_state = validate_input(initial_input)
 
         goal_input = input("Enter the goal state (exp: 0 0 0 1 2 3 0 0 0): ")
-        goal_state = validate_input(goal_input) #err = 1'ken tekrar soracak şekilde ayarla
+        goal_state = validate_input(goal_input)
 
         validate_goal(initial_state, goal_state)
         print("Valid initial and goal state.")
