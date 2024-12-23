@@ -112,6 +112,7 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
 
     tile_to_move = 1
     total_cost = 0
+    total_move = 0
 
     while current_state != goal_state:
         best_move = None
@@ -132,6 +133,7 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
                                 best_priority = total_misplaced_distance
                                 best_move = (new_state, direction)
                                 total_cost = total_cost + 2 # cost hesaplama için
+                                total_move = total_move + 1
                 # eğer aynı satırda değilse önce satırda değişiklik yapılacak
                 elif current_pos[1] == goal_pos[1]:
                     for direction in ['U', 'D']:
@@ -142,6 +144,7 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
                                 best_priority = total_misplaced_distance
                                 best_move = (new_state, direction)
                                 total_cost = total_cost + 1 # cost hesaplama için
+                                total_move = total_move + 1
 
         if best_move is None:
             raise ValueError("Error: No valid move found, puzzle cannot be solved.")
@@ -158,6 +161,10 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
 
         # sıradaki sayıya geç
         tile_to_move = tile_to_move + 1 if tile_to_move < 8 else 1
+
+        if total_move == 10:
+            print('Solution cannot found.')
+            break
 
     print("Solution completed!")
     print(f"Total cost: {total_cost}")  # toplam maliyet
