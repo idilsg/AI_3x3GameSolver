@@ -123,19 +123,8 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
             goal_pos = get_tile_position(goal_state, tile)
 
             if current_pos != goal_pos:  # sayı doğru pozisyonda değilse
-                # eğer aynı satırda ise sadece sütunda değişiklik yapılacak
-                if current_pos[0] == goal_pos[0]:
-                    for direction in ['L', 'R']:
-                        new_state = move_blank(current_state, direction)
-                        if new_state:
-                            total_misplaced_distance = manhattan_distance(new_state, goal_state)
-                            if total_misplaced_distance < best_priority:
-                                best_priority = total_misplaced_distance
-                                best_move = (new_state, direction)
-                                total_cost = total_cost + 2 # cost hesaplama için
-                                total_move = total_move + 1
                 # eğer aynı satırda değilse önce satırda değişiklik yapılacak
-                elif current_pos[1] == goal_pos[1]:
+                if current_pos[1] == goal_pos[1]:
                     for direction in ['U', 'D']:
                         new_state = move_blank(current_state, direction)
                         if new_state:
@@ -145,6 +134,18 @@ def solve_puzzle_step_by_step(initial_state, goal_state):
                                 best_move = (new_state, direction)
                                 total_cost = total_cost + 1 # cost hesaplama için
                                 total_move = total_move + 1
+                # eğer aynı satırda ise sadece sütunda değişiklik yapılacak
+                elif current_pos[0] == goal_pos[0]:
+                    for direction in ['L', 'R']:
+                        new_state = move_blank(current_state, direction)
+                        if new_state:
+                            total_misplaced_distance = manhattan_distance(new_state, goal_state)
+                            if total_misplaced_distance < best_priority:
+                                best_priority = total_misplaced_distance
+                                best_move = (new_state, direction)
+                                total_cost = total_cost + 2  # cost hesaplama için
+                                total_move = total_move + 1
+
 
         if best_move is None:
             raise ValueError("Error: No valid move found, puzzle cannot be solved.")
